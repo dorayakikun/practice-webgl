@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL SAMPLE</title>
+    <script id="vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec4 color;
+      uniform   mat4 mvpMatrix;
+      varying   vec4 vColor;
+      void main(void){
+        vColor = color;
+        gl_Position = mvpMatrix * vec4(position, 1.0);
+      }
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+      precision mediump float;
+      varying   vec4    vColor;
+      void main(void){
+        gl_FragColor = vColor;
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script type="text/javascript" src="./js/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+  </body>
+</html>
