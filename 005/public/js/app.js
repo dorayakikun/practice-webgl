@@ -85,7 +85,6 @@
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
-    gl.clearDepth(1.0);
 
     var count = 0;
     render();
