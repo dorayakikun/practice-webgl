@@ -171,16 +171,19 @@
       var mvpMatrix = mat4.identity( mat4.create() );
 
       var fovy      = 45;
-      var cx        = 1 * Math.sin( rad );
-      var cz        = 1 * Math.cos( rad );
+      var cx        = 1 * Math.sin( 0 );
+      var cz        = 1 * Math.cos( 0 );
 
       // ビュー座標変換
       mat4.lookAt( vMatrix, [ cx, 0.0, cz ], [ 0.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] );
       // 投影変換・クリッピング
       mat4.perspective( pMatrix, fovy, 1, 0.1, 100.0 );
+
+      mat4.rotateY( mMatrix, mMatrix, rad );
+
       // かける順番に注意
       mat4.multiply( vpMatrix, pMatrix, vMatrix );
-      mat4.multiply( mvpMatrix, mMatrix, vpMatrix );
+      mat4.multiply( mvpMatrix, vpMatrix, mMatrix );
 
       var uLocations = new Array( 2 );
       uLocations[0]  = gl.getUniformLocation( program, 'mvpMatrix' );
