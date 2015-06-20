@@ -194,7 +194,7 @@
       uLocations[1]  = gl.getUniformLocation( program, 'invMatrix' );
       uLocations[2]  = gl.getUniformLocation( program, 'lightDirection' );
       uLocations[3]  = gl.getUniformLocation( program, 'eyePosition' );
-      uLocations[4]  = gl.getUniformLocation( program, 'centerPosition' );
+      uLocations[4]  = gl.getUniformLocation( program, 'centerPoint' );
 
       gl.uniformMatrix4fv( uLocations[0], false, mvpMatrix );
 
