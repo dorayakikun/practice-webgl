@@ -22,17 +22,14 @@
         gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT );
         gl.generateMipmap( gl.TEXTURE_2D );
         gl.bindTexture( gl.TEXTURE_2D, null );
+        if( fn !== null ){
+          fn( texture );
+        }
       };
       img.src = path;
-      if( fn !== null ){
-        fn( texture );
-      }
     }
 
     function renderOctahedron( texture ) {
-
-      gl.bindTexture( gl.TEXTURE_2D, texture );
-
       var vs = createShader( 'vs' );
       var fs = createShader( 'fs' );
 
@@ -51,60 +48,32 @@
       var strides = [ 3, 4, 3, 2 ];
 
       var positions = [
-        -0.5,  0.0,  0.0,// 0 left
-         0.0,  0.5,  0.0,// 1 top
-         0.0,  0.0,  0.5,// 2 center
-         0.0, -0.5,  0.0,// 3 bottom
-         0.5,  0.0,  0.0,// 4 right
-
-         0.5,  0.0,  0.0,// 5 left( back )
-         0.0,  0.5,  0.0,// 6 top( back )
-         0.0,  0.0, -0.5,// 7 center( back )
-         0.0, -0.5,  0.0,// 8 right( back )
-        -0.5,  0.0,  0.0 // 9 bottom( back )
+        -0.5,  0.5,  0.0,// 0 left
+         0.5,  0.5,  0.0,// 1 top
+        -0.5, -0.5,  0.0,// 2 center
+         0.5, -0.5,  0.0,// 3 bottom
       ];
 
       // 色情報、左から順にRGBA
       var colors = [
-        0.0, 0.0, 1.0, 1.0,// 0
-        0.0, 0.0, 1.0, 1.0,// 1
+        1.0, 0.0, 0.0, 1.0,// 0
+        0.0, 1.0, 0.0, 1.0,// 1
         0.0, 0.0, 1.0, 1.0,// 2
-        0.0, 0.0, 1.0, 1.0,// 3
-        0.0, 0.0, 1.0, 1.0,// 4
-
-        0.0, 0.0, 1.0, 1.0,// 5
-        0.0, 0.0, 1.0, 1.0,// 6
-        0.0, 0.0, 1.0, 1.0,// 7
-        0.0, 0.0, 1.0, 1.0,// 8
-        0.0, 0.0, 1.0, 1.0 // 9
+        1.0, 1.0, 1.0, 1.0,// 3
       ];
 
       var normals = [
-       -1.0, 0.0, 0.0,// 0
-        0.0, 1.0, 0.0,// 1
+        0.0, 0.0, 1.0,// 0
+        0.0, 0.0, 1.0,// 1
         0.0, 0.0, 1.0,// 2
-        0.0,-1.0, 0.0,// 3
-        1.0, 0.0, 0.0,// 4
-
-        1.0, 0.0, 0.0,// 5
-        0.0, 1.0, 0.0,// 6
-        0.0, 0.0,-1.0,// 7
-        0.0,-1.0, 0.0,// 8
-       -1.0, 0.0, 0.0,// 9
+        0.0, 0.0, 1.0,// 3
       ];
 
       var textureCoords = [
         0.0, 0.0,
         1.0, 0.0,
         0.0, 1.0,
-        1.0, 1.0,
-        0.0, 1.0,
-
-        0.0, 0.0,
-        1.0, 0.0,
-        0.0, 1.0,
-        1.0, 1.0,
-        0.0, 1.0
+        1.0, 1.0
       ];
 
       // vboの作成
@@ -131,14 +100,7 @@
       // iboの作成
       var indexes = [
         0, 1, 2,
-        0, 2, 3,
-        2, 1, 4,
-        2, 4, 3,
-
-        5, 6, 7,
-        5, 7, 8,
-        7, 6, 9,
-        7, 9, 8
+        3, 2, 1
       ];
 
       var ibo = gl.createBuffer();
@@ -249,6 +211,8 @@
         var invMatrix = mat4.identity( mat4.create() );
         mat4.invert( invMatrix, mMatrix );
 
+        gl.activeTexture( gl.TEXTURE0 );
+        gl.bindTexture( gl.TEXTURE_2D, texture );
         gl.uniformMatrix4fv( uLocations[1], false, invMatrix );
 
         gl.uniform3fv( uLocations[2], lightDirection );
