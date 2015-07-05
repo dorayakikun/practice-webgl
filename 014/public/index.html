@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL SAMPLE</title>
+    <script id="vs" type="x-shader/x-vertex">
+      attribute vec3 positions;
+      attribute vec4 colors;
+      attribute vec3 normals;
+
+      uniform   mat4 mvpMatrix;
+
+      varying   vec4 vColors;
+      varying   vec3 vNormals;
+
+      void main( void ){
+        vColors        = colors;
+        vNormals       = normals;
+        gl_Position    = mvpMatrix * vec4( positions, 1.0 );
+      }
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+      precision mediump float;
+
+      varying vec4 vColors;
+      varying vec3 vNormals;
+      varying vec2 vTextureCoords;
+
+      uniform mat4      invMatrix;
+      uniform vec3      lightDirection;
+      uniform sampler2D shadeTexture;
+
+      void main( void ){
+        vec3 invLight     = normalize( invMatrix * vec4( lightDirection, 1.0 ) ).xyz;
+        float diff        = clamp( dot( invLight, vNormals ), 0.0, 1.0 );
+        vec4 shadeColor   = texture2D( shadeTexture, vec2( diff, 0.0 ) );
+        
+        gl_FragColor =  vColors * vec4( vec3( shadeColor ), 1.0 );
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script type="text/javascript" src="./js/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+  </body>
+</html>
