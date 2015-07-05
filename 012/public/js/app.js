@@ -5,7 +5,7 @@
     var c  = document.getElementById( 'canvas' );
     var gl = c.getContext( 'webgl' ) || c.getContext( 'experimental-webgl' );
 
-    var canvasSize = Math.min( this.innerWidth, this.innerHeight );
+    var canvasSize = Math.min( window.innerWidth, window.innerHeight );
 
     c.width  = canvasSize;
     c.height = canvasSize;
