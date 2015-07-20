@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL SAMPLE</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+	<script id="vs" type="x-shader/x-vertex">
+		attribute vec3 position;
+		attribute vec4 color;
+		attribute vec2 textureCoords;
+		
+		uniform mat4 mvpMatrix;
+		
+		varying vec4 vColor;
+		varying vec2 vTextureCoords;
+		
+		void main(){
+			vColor           = color;
+			vTextureCoords   = textureCoords;
+			gl_Position      = mvpMatrix * vec4( position, 1.0 );
+		}
+	</script>
+	<script id="fs" type="x-shader/x-fragment">
+		precision mediump float;
+		
+		uniform sampler2D texture;
+		
+		varying vec2 vTextureCoords;
+		varying vec4 vColor;
+		
+		void main(){
+			gl_FragColor = vColor * texture2D( texture, vTextureCoords );
+		}
+	</script>
+	<script id="ortho_vs" type="x-shader/x-vertex">
+		attribute vec2 textureCoords;
+		attribute vec3 position;
+		
+		uniform mat4 orthoMatrix;
+		
+		varying vec2 vTextureCoords;
+		
+		void main(){
+			vTextureCoords = vec2( textureCoords.x, 1.0 - textureCoords.y );
+			gl_Position    = orthoMatrix * vec4( position, 1.0 );
+		}
+	</script>
+	<script id="ortho_fs" type="x-shader/x-fragment">
+		precision mediump float;
+		
+		uniform sampler2D texture;
+		
+		varying vec2 vTextureCoords;
+		
+		void main(){
+			vec4 smpColor = texture2D( texture, vTextureCoords );
+			gl_FragColor  = vec4( vec3( 1.0 - smpColor.rgb), 1.0 );
+		}
+	</script>
+    <script type="text/javascript" src="./js/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+  </body>
+</html>
