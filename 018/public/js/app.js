@@ -37,17 +37,9 @@
       var fs = createShader( 'fs' );
       var program = createProgram( [ vs, fs ] );
 
-      var locations = new Array( 3 );
-      locations[0]  = gl.getAttribLocation( program, 'position' );
-      locations[1]  = gl.getAttribLocation( program, 'color' );
-      locations[2]  = gl.getAttribLocation( program, 'normal' );
-
       var textureVs = createShader( 'texture_vs' );
       var textureFs = createShader( 'texture_fs' );
       var textureProgram = createProgram( [ textureVs, textureFs ] );
-      var textureLocations = new Array( 2 );
-      textureLocations[0] = gl.getAttribLocation( textureProgram, 'textureCoords' );
-      textureLocations[1] = gl.getAttribLocation( textureProgram, 'position' );
 
       //
       // 深度テストの有効化
@@ -56,8 +48,6 @@
       gl.depthFunc( gl.LEQUAL );
 
       gl.enable( gl.CULL_FACE );
-
-      var frameTexture = null;
 
       var bufferSize  = 512;
       var frameBuffer = createFrameBuffer( bufferSize, bufferSize );
@@ -143,8 +133,6 @@
       	gl.bindRenderbuffer( gl.RENDERBUFFER, null );
       	gl.bindFramebuffer( gl.FRAMEBUFFER, null );
 
-        frameTexture = fTexture;
-
       	return {
           framebuffer: frameBuffer,
           depthRenderbuffer: renderBuffer,
@@ -171,39 +159,43 @@
         convertToVec3( rotatedCameraUp, qt, cameraUp );
 
         var tMatrix   = mat4.identity( mat4.create() );
-        var tpMatrix  = mat4.identity( mat4.create() );
+        var tmMatrix  = mat4.identity( mat4.create() );
         var tvMatrix  = mat4.identity( mat4.create() );
-        var ttpMatrix = mat4.identity( mat4.create() );
+        var tpMatrix  = mat4.identity( mat4.create() );
         var tvpMatrix = mat4.identity( mat4.create() );
 
-        tMatrix[0]  =  0.5; tMatrix[1]  =  0.0; tMatrix[2]  =  0.0; tMatrix[3]  =  0.0;
-        tMatrix[4]  =  0.0; tMatrix[5]  =  0.5; tMatrix[6]  =  0.0; tMatrix[7]  =  0.0;
-        tMatrix[8]  =  0.0; tMatrix[9]  =  0.0; tMatrix[10] =  1.0; tMatrix[11] =  0.0;
-        tMatrix[12] =  0.5; tMatrix[13] =  0.5; tMatrix[14] =  0.0; tMatrix[15] =  1.0;
+        tmMatrix[0]  =  0.5; tmMatrix[1]  =  0.0; tmMatrix[2]  =  0.0; tmMatrix[3]  =  0.0;
+        tmMatrix[4]  =  0.0; tmMatrix[5]  =  0.5; tmMatrix[6]  =  0.0; tmMatrix[7]  =  0.0;
+        tmMatrix[8]  =  0.0; tmMatrix[9]  =  0.0; tmMatrix[10] =  1.0; tmMatrix[11] =  0.0;
+        tmMatrix[12] =  0.5; tmMatrix[13] =  0.5; tmMatrix[14] =  0.0; tmMatrix[15] =  1.0;
 
-        mat4.lookAt( tvMatrix, eyePosition, centerPosition, cameraUp );
+        mat4.lookAt( tvMatrix, rotatedEyePosition, centerPosition, rotatedCameraUp );
         mat4.perspective( tpMatrix, 45, 1, 0.1, 30.0 );
-        mat4.multiply( ttpMatrix, tpMatrix, tvMatrix );
-        mat4.multiply( tvpMatrix, ttpMatrix, tMatrix );
+        mat4.multiply( tvpMatrix, tpMatrix, tvMatrix );
+        mat4.multiply( tMatrix, tvpMatrix, tmMatrix );
 
         // VBOの登録
+        var textureLocations = new Array( 2 );
+        textureLocations[0] = gl.getAttribLocation( textureProgram, 'textureCoords' );
+        textureLocations[1] = gl.getAttribLocation( textureProgram, 'position' );
+        
         var sphere = createSphere( 64, 64, 10, [ 1, 1, 1, 1 ] );
 
+        var textureVbo = createVbo( sphere.textureCoords );
+        gl.bindBuffer( gl.ARRAY_BUFFER, textureVbo );
+        gl.enableVertexAttribArray( textureLocations[0] );
+        gl.vertexAttribPointer( textureLocations[0], 2, gl.FLOAT, false, 0, 0 );
+        
         var texturePositionVbo = createVbo( sphere.vertices );
         gl.bindBuffer( gl.ARRAY_BUFFER, texturePositionVbo );
-        gl.enableVertexAttribArray( textureLocations[0] );
-        gl.vertexAttribPointer( textureLocations[0], 3, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( textureLocations[1] );
+        gl.vertexAttribPointer( textureLocations[1], 3, gl.FLOAT, false, 0, 0 );
 
         var texturePositionIbo = gl.createBuffer();
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, texturePositionIbo );
         gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Int16Array( sphere.indexes ), gl.STATIC_DRAW );
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null );
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, texturePositionIbo );
-
-        var textureVbo = createVbo( sphere.textureCoords );
-        gl.bindBuffer( gl.ARRAY_BUFFER, textureVbo );
-        gl.enableVertexAttribArray( textureLocations[1] );
-        gl.vertexAttribPointer( textureLocations[1], 2, gl.FLOAT, false, 0, 0 );
 
         // Uniformの登録
         var textureUniformLocations = new Array( 2 );
@@ -214,20 +206,29 @@
         gl.bindTexture( gl.TEXTURE_2D, texture );
         gl.bindFramebuffer( gl.FRAMEBUFFER, frameBuffer.framebuffer );
 
-        gl.uniformMatrix4fv( textureUniformLocations[0], false, ttpMatrix );
+        gl.uniformMatrix4fv( textureUniformLocations[0], false, tvpMatrix );
         gl.uniform1i( textureUniformLocations[1], 0 );
 
+        // frameBufferへの描画
         gl.clearColor( 0.3, 0.3, 0.3, 1.0 );
         gl.viewport( 0, 0, bufferSize, bufferSize );
-
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+        
+        gl.drawElements( gl.TRIANGLES, sphere.indexes.length, gl.UNSIGNED_SHORT, 0 );
+        
+        // Canvasへの描画
+        gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+        gl.clearColor( 0.3, 0.3, 0.3, 1.0 );
+        gl.viewport( 0, 0, c.width, c.height );
+        
         gl.drawElements( gl.TRIANGLES, sphere.indexes.length, gl.UNSIGNED_SHORT, 0 );
         
         // Cubeの描画
         gl.cullFace( gl.BACK );
-        gl.bindTexture( gl.TEXTURE_2D, frameTexture );
+        gl.bindTexture( gl.TEXTURE_2D, frameBuffer.texture );
         gl.clearColor( 0.3, 0.3, 0.3, 1.0 );
         gl.viewport( 0, 0, c.width, c.height );
-        gl.bindFramebuffer( gl.FRAMEBUFFER, null );        
+                
         gl.useProgram( program );
 
         var mMatrix   = mat4.identity( mat4.create() );
@@ -246,6 +247,11 @@
         mat4.multiply( mvpMatrix, vpMatrix, mMatrix );
 
         // VBOの登録
+        var locations = new Array( 3 );
+        locations[0]  = gl.getAttribLocation( program, 'position' );
+        locations[1]  = gl.getAttribLocation( program, 'color' );
+        locations[2]  = gl.getAttribLocation( program, 'normal' );
+        
         var cube = createCube( 0.5, [ 1, 1, 1, 1 ] );
         var positionVbo = createVbo( cube.vertices );
         gl.bindBuffer( gl.ARRAY_BUFFER, positionVbo );
@@ -278,8 +284,8 @@
         
         gl.uniformMatrix4fv( uniformLocations[0], false, mMatrix );
         gl.uniformMatrix4fv( uniformLocations[1], false, mvpMatrix );
-        gl.uniformMatrix4fv( uniformLocations[2], false, tvpMatrix );
-        gl.uniform1f( uniformLocations[3], 0 );
+        gl.uniformMatrix4fv( uniformLocations[2], false, tMatrix );
+        gl.uniform1f( uniformLocations[3], 50 );
         gl.uniform1i( uniformLocations[4], 0 );
 
         gl.drawElements( gl.TRIANGLES, cube.indexes.length, gl.UNSIGNED_SHORT, 0 );
