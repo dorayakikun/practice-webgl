@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>WebGL SAMPLE</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+	<script id="vs" type="x-shader/x-vertex">
+		attribute vec3 position;
+		attribute vec3 normal;
+		attribute vec4 color;
+		
+		uniform mat4  mMatrix;
+		uniform mat4  mvpMatrix;
+		uniform mat4  tMatrix;
+		uniform float coefficient;
+		
+		varying vec4 vColor;
+		varying vec4 vTextureCoords;
+		
+		void main(){
+			vec4 pos = mMatrix * vec4( position, 1.0 );
+			vec4 nor = mMatrix * vec4( normal, 1.0 );
+			vColor   = color;
+			
+			vTextureCoords = tMatrix * vec4( pos.xyz + nor.xyz * coefficient, 1.0 );
+			gl_Position    = mvpMatrix * vec4( position, 1.0 );
+		}
+	</script>
+	<script id="fs" type="x-shader/x-fragment">
+	precision mediump float;
+	
+	uniform sampler2D texture;
+	
+	varying vec4 vColor;
+	varying vec4 vTextureCoords;
+	
+	void main(){
+		vec4 smpColor = texture2DProj( texture, vTextureCoords );
+		gl_FragColor  = vColor * smpColor;
+	}
+	</script>
+	<script id="texture_vs" type="x-shader/x-vertex">
+	attribute vec2 textureCoords;
+	attribute vec3 position;
+	
+	uniform mat4 mvpMatrix;
+	
+	varying vec2 vTextureCoords;
+	
+	void main(){
+		vTextureCoords = textureCoords;
+		gl_Position    = mvpMatrix * vec4( position, 1.0 );
+	}
+	</script>
+	<script id="texture_fs" type="x-shader/x-fragment">
+	precision mediump float;
+	
+	uniform sampler2D texture;
+	
+	varying vec2 vTextureCoords;
+	
+	void main(){
+		gl_FragColor = texture2D( texture, vTextureCoords );
+	}
+	</script>
+    <script type="text/javascript" src="./js/gl-matrix-min.js"></script>
+    <script type="text/javascript" src="./js/app.js"></script>
+  </body>
+</html>
