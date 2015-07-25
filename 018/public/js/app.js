@@ -5,8 +5,7 @@
     var c  = document.getElementById( 'canvas' );
     var gl = c.getContext( 'webgl' ) || c.getContext( 'experimental-webgl' );
 
-    // var canvasSize = Math.min( this.innerWidth, this.innerHeight );
-    var canvasSize = 512;
+    var canvasSize = Math.min( this.innerWidth, this.innerHeight );
 
     c.width  = canvasSize;
     c.height = canvasSize;
@@ -161,25 +160,25 @@
         convertToVec3( rotatedCameraUp, qt, cameraUp );
 
         // テクスチャ用の行列を準備
-        var tmMatrix  = mat4.identity( mat4.create() );
+        var ttMatrix  = mat4.identity( mat4.create() );
         var tvMatrix  = mat4.identity( mat4.create() );
         var tpMatrix  = mat4.identity( mat4.create() );
-        var tmpMatrix = mat4.identity( mat4.create() );
-        var tvpMatrix = mat4.identity( mat4.create() );
+        var tptMatrix = mat4.identity( mat4.create() );
+        var tvptMatrix = mat4.identity( mat4.create() );
 
-        tmMatrix[0]  =  0.5; tmMatrix[1]  =  0.0; tmMatrix[2]  =  0.0; tmMatrix[3]  =  0.0;
-        tmMatrix[4]  =  0.0; tmMatrix[5]  =  0.5; tmMatrix[6]  =  0.0; tmMatrix[7]  =  0.0;
-        tmMatrix[8]  =  0.0; tmMatrix[9]  =  0.0; tmMatrix[10] =  1.0; tmMatrix[11] =  0.0;
-        tmMatrix[12] =  0.5; tmMatrix[13] =  0.5; tmMatrix[14] =  0.0; tmMatrix[15] =  1.0;
+        ttMatrix[0]  =  0.5; ttMatrix[1]  =  0.0; ttMatrix[2]  =  0.0; ttMatrix[3]  =  0.0;
+        ttMatrix[4]  =  0.0; ttMatrix[5]  =  0.5; ttMatrix[6]  =  0.0; ttMatrix[7]  =  0.0;
+        ttMatrix[8]  =  0.0; ttMatrix[9]  =  0.0; ttMatrix[10] =  1.0; ttMatrix[11] =  0.0;
+        ttMatrix[12] =  0.5; ttMatrix[13] =  0.5; ttMatrix[14] =  0.0; ttMatrix[15] =  1.0;
 
         // View
         mat4.lookAt( tvMatrix, rotatedEyePosition, centerPosition, rotatedCameraUp );
         // Projection
         mat4.perspective( tpMatrix, 45, 1, 0.1, 30.0 );
         // VP
-        mat4.multiply( tmpMatrix, tmMatrix, tpMatrix );
+        mat4.multiply( tptMatrix, ttMatrix, tpMatrix );
         // MVP
-        mat4.multiply( tvpMatrix, tmpMatrix, tvMatrix );
+        mat4.multiply( tvptMatrix, tptMatrix, tvMatrix );
         
         // キューブ用行列を準備
         var mMatrix   = mat4.identity( mat4.create() );
@@ -236,7 +235,7 @@
 
         // frameBufferへの描画
         gl.clearColor( 0.3, 0.3, 0.3, 1.0 );
-        gl.viewport( 0, 0, c.width, c.height );
+        gl.viewport( 0, 0, bufferSize, bufferSize );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         
         gl.drawElements( gl.TRIANGLES, sphere.indexes.length, gl.UNSIGNED_SHORT, 0 );
@@ -294,8 +293,8 @@
         
         gl.uniformMatrix4fv( uniformLocations[0], false, mMatrix );
         gl.uniformMatrix4fv( uniformLocations[1], false, mvpMatrix );
-        gl.uniformMatrix4fv( uniformLocations[2], false, tvpMatrix );
-        gl.uniform1f( uniformLocations[3], 50 / 1000 );
+        gl.uniformMatrix4fv( uniformLocations[2], false, tvptMatrix );
+        gl.uniform1f( uniformLocations[3], 20 / 1000 );
         gl.uniform1i( uniformLocations[4], 0 );
 
         gl.drawElements( gl.TRIANGLES, cube.indexes.length, gl.UNSIGNED_SHORT, 0 );
@@ -348,15 +347,17 @@
     }
 
     function createCube( side, color ) {
-      var hs = side * 0.5;
+      
+      var vertice = side * 0.5;
       var vertices = [
-      	-hs, -hs,  hs,  hs, -hs,  hs,  hs,  hs,  hs, -hs,  hs,  hs,
-      	-hs, -hs, -hs, -hs,  hs, -hs,  hs,  hs, -hs,  hs, -hs, -hs,
-      	-hs,  hs, -hs, -hs,  hs,  hs,  hs,  hs,  hs,  hs,  hs, -hs,
-      	-hs, -hs, -hs,  hs, -hs, -hs,  hs, -hs,  hs, -hs, -hs,  hs,
-      	 hs, -hs, -hs,  hs,  hs, -hs,  hs,  hs,  hs,  hs, -hs,  hs,
-      	-hs, -hs, -hs, -hs, -hs,  hs, -hs,  hs,  hs, -hs,  hs, -hs
+      	-vertice, -vertice,  vertice,  vertice, -vertice,  vertice,  vertice,  vertice,  vertice, -vertice,  vertice,  vertice,
+      	-vertice, -vertice, -vertice, -vertice,  vertice, -vertice,  vertice,  vertice, -vertice,  vertice, -vertice, -vertice,
+      	-vertice,  vertice, -vertice, -vertice,  vertice,  vertice,  vertice,  vertice,  vertice,  vertice,  vertice, -vertice,
+      	-vertice, -vertice, -vertice,  vertice, -vertice, -vertice,  vertice, -vertice,  vertice, -vertice, -vertice,  vertice,
+      	 vertice, -vertice, -vertice,  vertice,  vertice, -vertice,  vertice,  vertice,  vertice,  vertice, -vertice,  vertice,
+      	-vertice, -vertice, -vertice, -vertice, -vertice,  vertice, -vertice,  vertice,  vertice, -vertice,  vertice, -vertice
       ];
+      
       var normals = [
       	-1.0, -1.0,  1.0,  1.0, -1.0,  1.0,  1.0,  1.0,  1.0, -1.0,  1.0,  1.0,
       	-1.0, -1.0, -1.0, -1.0,  1.0, -1.0,  1.0,  1.0, -1.0,  1.0, -1.0, -1.0,
@@ -365,10 +366,13 @@
       	 1.0, -1.0, -1.0,  1.0,  1.0, -1.0,  1.0,  1.0,  1.0,  1.0, -1.0,  1.0,
       	-1.0, -1.0, -1.0, -1.0, -1.0,  1.0, -1.0,  1.0,  1.0, -1.0,  1.0, -1.0
       ];
+      
       var colors = [];
-      for( var i = 0; i < vertices.length / 3; i++ ){
+      var range = vertices.length / 3;
+      for( var i = 0; i < range; i++ ){
       	colors.push( color[0], color[1], color[2], color[3] );
       }
+      
       var textureCoords = [
       	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
       	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
@@ -377,6 +381,7 @@
       	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
       	0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0
       ];
+      
       var indexes = [
       	 0,  1,  2,  0,  2,  3,
       	 4,  5,  6,  4,  6,  7,
@@ -385,6 +390,7 @@
       	16, 17, 18, 16, 18, 19,
       	20, 21, 22, 20, 22, 23
       ];
+      
       return {
         vertices:      vertices,
         normals:       normals,
@@ -401,6 +407,7 @@
           colors        = [],
           textureCoords = [],
           indexes       = [];
+          
       for( var i = 0; i <= widthSegment; i++ ){
         var r = Math.PI / widthSegment * i;
         var ry = Math.cos(r);
