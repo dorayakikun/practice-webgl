@@ -5,7 +5,8 @@
     var c  = document.getElementById( 'canvas' );
     var gl = c.getContext( 'webgl' ) || c.getContext( 'experimental-webgl' );
 
-    var canvasSize = Math.min( this.innerWidth, this.innerHeight );
+    // var canvasSize = Math.min( this.innerWidth, this.innerHeight );
+    var canvasSize = 512;
 
     c.width  = canvasSize;
     c.height = canvasSize;
@@ -41,17 +42,18 @@
       var textureFs = createShader( 'texture_fs' );
       var textureProgram = createProgram( [ textureVs, textureFs ] );
 
-      //
       // 深度テストの有効化
-      // -------------------------------------------------------------------
       gl.enable( gl.DEPTH_TEST );
       gl.depthFunc( gl.LEQUAL );
 
+      // カリングを有効化
       gl.enable( gl.CULL_FACE );
 
+      // FrameBufferの生成
       var bufferSize  = 512;
       var frameBuffer = createFrameBuffer( bufferSize, bufferSize );
 
+      // 描画処理を実行
       render();
 
       function createShader( id ) {
@@ -134,34 +136,35 @@
       	gl.bindFramebuffer( gl.FRAMEBUFFER, null );
 
       	return {
-          framebuffer: frameBuffer,
+          framebuffer:       frameBuffer,
           depthRenderbuffer: renderBuffer,
-          texture: fTexture
+          texture:           fTexture
         };
       }
 
       function render() {
-        gl.useProgram( textureProgram );
         
+        // テクスチャ用シェーダを有効化
+        gl.useProgram( textureProgram );
+        // ポリゴンの裏面を有効化
         gl.cullFace( gl.FRONT );
 
-        var cx   = 1 * Math.sin( 0 );
-        var cz   = 1 * Math.cos( 0 );
-
+        // 座標の取得
+        var cx   = 1 * Math.sin( 0 );// Camera X
+        var cz   = 1 * Math.cos( 0 );// Camera Z
         var eyePosition    = [ cx, 0.0, cz ];
         var centerPosition = [ 0.0, 0.0, 0.0 ];
         var cameraUp       = [ 0.0, 1.0, 0.0 ];
-        
         var rotatedEyePosition = new Array( 3 );
         convertToVec3( rotatedEyePosition, qt, eyePosition );
-        
         var rotatedCameraUp = new Array( 3 );
         convertToVec3( rotatedCameraUp, qt, cameraUp );
 
-        var tMatrix   = mat4.identity( mat4.create() );
+        // テクスチャ用の行列を準備
         var tmMatrix  = mat4.identity( mat4.create() );
         var tvMatrix  = mat4.identity( mat4.create() );
         var tpMatrix  = mat4.identity( mat4.create() );
+        var tmpMatrix = mat4.identity( mat4.create() );
         var tvpMatrix = mat4.identity( mat4.create() );
 
         tmMatrix[0]  =  0.5; tmMatrix[1]  =  0.0; tmMatrix[2]  =  0.0; tmMatrix[3]  =  0.0;
@@ -169,10 +172,30 @@
         tmMatrix[8]  =  0.0; tmMatrix[9]  =  0.0; tmMatrix[10] =  1.0; tmMatrix[11] =  0.0;
         tmMatrix[12] =  0.5; tmMatrix[13] =  0.5; tmMatrix[14] =  0.0; tmMatrix[15] =  1.0;
 
+        // View
         mat4.lookAt( tvMatrix, rotatedEyePosition, centerPosition, rotatedCameraUp );
+        // Projection
         mat4.perspective( tpMatrix, 45, 1, 0.1, 30.0 );
-        mat4.multiply( tvpMatrix, tpMatrix, tvMatrix );
-        mat4.multiply( tMatrix, tvpMatrix, tmMatrix );
+        // VP
+        mat4.multiply( tmpMatrix, tmMatrix, tpMatrix );
+        // MVP
+        mat4.multiply( tvpMatrix, tmpMatrix, tvMatrix );
+        
+        // キューブ用行列を準備
+        var mMatrix   = mat4.identity( mat4.create() );
+        var vMatrix   = mat4.identity( mat4.create() );
+        var pMatrix   = mat4.identity( mat4.create() );
+        var vpMatrix  = mat4.identity( mat4.create() );
+        var mvpMatrix = mat4.identity( mat4.create() );
+
+        // ビュー座標変換
+        mat4.lookAt( vMatrix, rotatedEyePosition, centerPosition, rotatedCameraUp );
+        // 投影変換・クリッピング
+        mat4.perspective( pMatrix, 45, 1, 0.1, 30.0 );
+
+        // かける順番に注意
+        mat4.multiply( vpMatrix, pMatrix, vMatrix );
+        mat4.multiply( mvpMatrix, vpMatrix, mMatrix );
 
         // VBOの登録
         var textureLocations = new Array( 2 );
@@ -180,7 +203,7 @@
         textureLocations[1] = gl.getAttribLocation( textureProgram, 'position' );
         
         var sphere = createSphere( 64, 64, 10, [ 1, 1, 1, 1 ] );
-
+        
         var textureVbo = createVbo( sphere.textureCoords );
         gl.bindBuffer( gl.ARRAY_BUFFER, textureVbo );
         gl.enableVertexAttribArray( textureLocations[0] );
@@ -197,21 +220,23 @@
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null );
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, texturePositionIbo );
 
+        // テクスチャの有効化
+        gl.activeTexture( gl.TEXTURE0 );
+        gl.bindTexture( gl.TEXTURE_2D, texture );
+        
         // Uniformの登録
         var textureUniformLocations = new Array( 2 );
         textureUniformLocations[0]  = gl.getUniformLocation( textureProgram, 'mvpMatrix' );
         textureUniformLocations[1]  = gl.getUniformLocation( textureProgram, 'texture' );
-
-        gl.activeTexture( gl.TEXTURE0 );
-        gl.bindTexture( gl.TEXTURE_2D, texture );
-        gl.bindFramebuffer( gl.FRAMEBUFFER, frameBuffer.framebuffer );
-
-        gl.uniformMatrix4fv( textureUniformLocations[0], false, tvpMatrix );
+        gl.uniformMatrix4fv( textureUniformLocations[0], false, vpMatrix );
         gl.uniform1i( textureUniformLocations[1], 0 );
+        
+        // render to framebuffer
+        gl.bindFramebuffer( gl.FRAMEBUFFER, frameBuffer.framebuffer );
 
         // frameBufferへの描画
         gl.clearColor( 0.3, 0.3, 0.3, 1.0 );
-        gl.viewport( 0, 0, bufferSize, bufferSize );
+        gl.viewport( 0, 0, c.width, c.height );
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         
         gl.drawElements( gl.TRIANGLES, sphere.indexes.length, gl.UNSIGNED_SHORT, 0 );
@@ -231,28 +256,13 @@
                 
         gl.useProgram( program );
 
-        var mMatrix   = mat4.identity( mat4.create() );
-        var vMatrix   = mat4.identity( mat4.create() );
-        var pMatrix   = mat4.identity( mat4.create() );
-        var vpMatrix  = mat4.identity( mat4.create() );
-        var mvpMatrix = mat4.identity( mat4.create() );
-
-        // ビュー座標変換
-        mat4.lookAt( vMatrix, rotatedEyePosition, centerPosition, rotatedCameraUp );
-        // 投影変換・クリッピング
-        mat4.perspective( pMatrix, 45, 1, 0.1, 30.0 );
-
-        // かける順番に注意
-        mat4.multiply( vpMatrix, pMatrix, vMatrix );
-        mat4.multiply( mvpMatrix, vpMatrix, mMatrix );
-
         // VBOの登録
         var locations = new Array( 3 );
         locations[0]  = gl.getAttribLocation( program, 'position' );
         locations[1]  = gl.getAttribLocation( program, 'color' );
         locations[2]  = gl.getAttribLocation( program, 'normal' );
         
-        var cube = createCube( 0.5, [ 1, 1, 1, 1 ] );
+        var cube = createCube( 0.25, [ 1, 1, 1, 1 ] );
         var positionVbo = createVbo( cube.vertices );
         gl.bindBuffer( gl.ARRAY_BUFFER, positionVbo );
         gl.enableVertexAttribArray( locations[0] );
@@ -284,8 +294,8 @@
         
         gl.uniformMatrix4fv( uniformLocations[0], false, mMatrix );
         gl.uniformMatrix4fv( uniformLocations[1], false, mvpMatrix );
-        gl.uniformMatrix4fv( uniformLocations[2], false, tMatrix );
-        gl.uniform1f( uniformLocations[3], 50 );
+        gl.uniformMatrix4fv( uniformLocations[2], false, tvpMatrix );
+        gl.uniform1f( uniformLocations[3], 50 / 1000 );
         gl.uniform1i( uniformLocations[4], 0 );
 
         gl.drawElements( gl.TRIANGLES, cube.indexes.length, gl.UNSIGNED_SHORT, 0 );
