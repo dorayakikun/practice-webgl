@@ -40,7 +40,6 @@
       paths.forEach( function( path ) {
         
         var img = new Image();
-        // img.onload = function() { loaded += 1; };
         img.src = path;
         
         imgs.push( img );
@@ -50,17 +49,14 @@
     
     function createCubeTexture( targets, fn ) {
       
-      var tex    = gl.createTexture();
+      var tex = gl.createTexture();
       
       gl.bindTexture( gl.TEXTURE_CUBE_MAP, tex );
       
-      // imgs.forEach(function( value, index ){
       for ( var i = 0; i < targets.length; i++ ) {
         gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, false );
         gl.texImage2D( targets[i], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imgs[i] );
       } 
-          
-      // });
       
       gl.generateMipmap( gl.TEXTURE_CUBE_MAP );
       
