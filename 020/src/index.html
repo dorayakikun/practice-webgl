@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>taiyaki sample</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script id="vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec2 textureCoord;
+
+      uniform mat4 orthoMatrix;
+
+      varying vec2 vTextureCoord;
+
+      void main(){
+        vTextureCoord   = vec2( textureCoord.x, textureCoord.y );
+        gl_Position     = orthoMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+      precision mediump float;
+
+      uniform sampler2D texture;
+
+      const float redScale        = 0.298912;
+      const float greenScale      = 0.586611;
+      const float blueScale       = 0.114478;
+      const vec3  monochromeScale = vec3( redScale, greenScale, blueScale );
+
+      const float sRedScale   = 1.07;
+      const float sGreenScale = 0.74;
+      const float sBlueScale  = 0.43;
+      const vec3  sepiaScale = vec3(sRedScale, sGreenScale, sBlueScale);
+
+      varying vec2 vTextureCoord;
+
+      void main(){
+        vec2 v  = vTextureCoord * 2.0 - 1.0;
+        float l = 1.25 - length( v );
+
+        vec3  smpColor  = texture2D( texture, vTextureCoord ).rgb;
+        float gray      = dot( monochromeScale, smpColor );
+        vec3 sepiaColor = vec3(gray) * sepiaScale;
+
+        gl_FragColor = vec4( sepiaColor * l, 1.0 );
+      }
+    </script>
+    <script id="light_vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec3 normal;
+      attribute vec4 color;
+
+      uniform mat4 mvpMatrix;
+      uniform mat4 invMatrix;
+      uniform vec3 light;
+
+      varying vec4 vColor;
+
+      void main(){
+        vec3 invLight = normalize( invMatrix * vec4( light, 1.0 ) ).xyz;
+        float diff    = clamp( dot( invLight, normal ), 0.1, 1.0 );
+
+        vColor = vec4( color.rgb * diff, 1.0 );
+
+        gl_Position = mvpMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="light_fs" type="x-shader/x-fragment">
+      precision mediump float;
+
+      uniform sampler2D texture;
+
+      varying vec4 vColor;
+
+      void main(){
+        gl_FragColor = vColor;
+      }
+    </script>
+    <script type="text/javascript" src="./bundle.js"></script>
+  </body>
+</html>
