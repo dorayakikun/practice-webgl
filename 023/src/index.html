@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>taiyaki sample</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script id="vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec2 textureCoord;
+      
+      uniform mat4 orthoMatrix;
+      
+      varying vec2 vTextureCoord;
+      
+      void main() {
+        vTextureCoord = vec2( textureCoord.x, textureCoord.y );
+        gl_Position   = orthoMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      uniform sampler2D texture;
+      uniform vec2      resolution;
+      
+      varying vec2 vTextureCoord;
+      
+      #define PI 3.14159265
+      #define OCT 7
+      #define PER 0.75
+      
+      float rnd( vec3 p ) {
+        vec3 i = floor( p );
+        vec4 a = dot( i, vec3( 1.0, 57.0, 21.0 ) ) + vec4( 0.0, 57.0, 21.0, 78.0 );
+        vec3 f = cos( ( p - i ) * PI ) * ( -0.5 ) + 0.5;
+        
+        a    = mix( sin( cos( a ) * a ), sin( cos( 1.0 + a ) * ( 1.0 + a ) ), f.x );
+        a.xy = mix( a.xz, a.yw, f.y);
+        
+        return mix( a.x, a.y, f.z );
+      }
+      
+      float noise( vec3 p ) {
+        float t = 0.0;
+        for( int i = 0; i < OCT; i++ ) {
+          float freq = pow( 2.0, float( i ) );
+          float amp  = pow( PER, float( OCT - i ) );
+          
+          t += max( rnd( p / freq ), 0.1 ) * amp;
+        }
+        return t;
+      }
+      
+      float snoise2d( vec2 p, vec2 w ){
+        vec2 q = p / w;
+        return noise( vec3( p.x, p.y, 0.0 ) )             * q.x           * q.y  +
+               noise( vec3( p.x, p.y + w.y, 0.0 ) )       * q.x           * ( 1.0 - q.y ) +
+               noise( vec3( p.x + w.x, p.y, 0.0 ) )       * ( 1.0 - q.x ) * q.y  +
+               noise( vec3( p.x + w.x, p.y + w.y, 0.0 ) ) * ( 1.0 - q.x ) * ( 1.0 - q.y );
+      }
+      
+      void main() {
+        float snoise   = snoise2d( gl_FragCoord.xy, resolution );
+        vec3  smpColor = texture2D( texture, vTextureCoord ).rgb * snoise;
+        // vec3  smpColor = texture2D( texture, vTextureCoord ).rgb;
+        
+        gl_FragColor = vec4( smpColor, 1.0 );
+      }
+    </script>
+    <script id="light_vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec3 normal;
+      attribute vec4 color;
+      
+      uniform mat4 mvpMatrix;
+      uniform mat4 invMatrix;
+      uniform vec3 light;
+      
+      varying vec4 vColor;
+      
+      void main() {
+        vec3  invLight = normalize( invMatrix * vec4( light, 1.0 ) ).xyz;
+        float diff     = clamp( dot( invLight, normal ), 0.1, 1.0 );
+        
+        vColor      = vec4( color.rgb * diff, 1.0 );
+        gl_Position = mvpMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="light_fs" type="x-shader/x-fragment">
+      precision mediump float;
+      varying vec4 vColor;
+      
+      void main() {
+        gl_FragColor = vColor;
+      }
+    </script>
+    <script type="text/javascript" src="./bundle.js"></script>
+  </body>
+</html>
