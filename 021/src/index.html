@@ -46,12 +46,12 @@
       
       uniform mat4 mvpMatrix;
       uniform mat4 invMatrix;
-      uniform vec3 lightDirection;
+      uniform vec3 light;
       
       varying vec4 vColor;
       
       void main(){
-        vec3  invLight = normalize( invMatrix * vec4( lightDirection, 1.0 ) ).xyz;
+        vec3  invLight = normalize( invMatrix * vec4( light, 1.0 ) ).xyz;
         float diff     = clamp( dot( invLight, normal ), 0.1, 1.0 );
         
         vColor = vec4(color.rgb * diff, 1.0);
