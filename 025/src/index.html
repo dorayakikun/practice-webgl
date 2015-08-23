@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>taiyaki sample</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script id="vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec2 textureCoord;
+      
+      uniform mat4 orthoMatrix;
+      
+      varying vec2 vTextureCoord;
+      
+      void main() {
+        vTextureCoord = vec2( textureCoord.x, textureCoord.y );
+        gl_Position   = orthoMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      uniform sampler2D texture;
+      
+      uniform vec2 resolution;
+      uniform vec2 mouse;
+      varying vec2 vTextureCoord;
+      
+      const float count    = 20.0;
+      const float weight   = 1.0 / count;
+      const float strength = 5.0;
+      
+      float rnd( vec2 p ) {
+        return fract( sin( dot( p, vec2( 12.9898, 4.1414 ) ) ) * 43758.5453 );
+      }
+      
+      void main() {
+        vec3 smpColor = vec3( 0.0 );
+        vec2  p = gl_FragCoord.xy / resolution * 2.0 - 1.0;
+        float r = rnd( normalize( p ) );
+        
+        p -= mouse;
+        
+        for ( float f = 0.0; f <= count; f++ ){
+          float g = ( f + r ) * weight;
+          vec2  q = vTextureCoord - p * g * strength * weight;
+          
+          smpColor += texture2D( texture, q ).rgb * weight;
+        }
+        gl_FragColor = vec4( smpColor, 1.0 );
+      }
+    </script>
+    <script id="light_vs" type="x-shader/x-vertex">
+      attribute vec3 position;
+      attribute vec3 normal;
+      attribute vec4 color;
+      attribute vec2 textureCoord;
+      
+      uniform mat4 mvpMatrix;
+      uniform mat4 invMatrix;
+      uniform vec3 light;
+      uniform bool isTexture;
+      
+      varying vec4 vColor;
+      varying vec2 vTextureCoord;
+      
+      void main() {
+        if( isTexture ) {
+          vColor = vec4( 1.0 );
+        }else{
+          vec3  invLight = normalize( invMatrix * vec4( light, 1.0 ) ).xyz;
+          float diff     = clamp( dot( invLight, normal ), 0.1, 1.0 );
+          
+          vColor = vec4( color.rgb * diff, 1.0 );
+        }
+        vTextureCoord = textureCoord;
+        gl_Position   = mvpMatrix * vec4( position, 1.0 );
+      }
+    </script>
+    <script id="light_fs" type="x-shader/x-fragment">
+      precision mediump float;
+      
+      uniform sampler2D texture;
+      uniform bool      isTexture;
+      
+      varying vec4 vColor;
+      varying vec2 vTextureCoord;
+      
+      void main() {
+        vec4 smpColor = vec4( 1.0 );
+        if( isTexture ){
+          smpColor = texture2D( texture, vTextureCoord );
+        }
+        gl_FragColor = vColor * smpColor;
+      }
+    </script>
+    <script type="text/javascript" src="./bundle.js"></script>
+  </body>
+</html>
