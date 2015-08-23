@@ -16,6 +16,7 @@ function main() {
   var frameBufferAttr = ctx.createFrameBuffer( bufferSize, bufferSize );
   
   var qt = quat.identity( quat.create() );
+  document.addEventListener( 'mousemove', calculateQuat );
   
   render();
   
@@ -55,7 +56,7 @@ function main() {
   
   function initRender() {
     ctx.bindFramebuffer( frameBufferAttr.value );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,
@@ -135,7 +136,7 @@ function main() {
   
   function initOrthoRender() {
     ctx.bindFramebuffer( null );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,
