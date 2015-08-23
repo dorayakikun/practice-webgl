@@ -5,8 +5,7 @@ function main() {
   
   var Context = taiyaki.RenderingContext;
   
-  var ctx = new Context( 'canvas' );
-  
+  var ctx = new Context( 'canvas' );  
   var canvas = document.getElementById( 'canvas' );
   
   ctx.toggleDepthFunc( true );
@@ -35,6 +34,7 @@ function main() {
   var weight = tmpWeight.map( function( value ) { return value / t; } );
   
   var qt = quat.identity( quat.create() );
+  document.addEventListener( 'mousemove', calculateQuat );
   
   render();
   
@@ -62,7 +62,7 @@ function main() {
     setupuOrthoUniforms( program, false );
     ctx.drawElements( ctx.gl.TRIANGLES, 6 );
   
-    // requestAnimationFrame( render );
+    requestAnimationFrame( render );
   }
   
   function setupVbos( lightProgram, sphere ) {
@@ -78,7 +78,7 @@ function main() {
   
   function initRender() {
     ctx.bindFramebuffer( frameBufferAttr.value );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,
@@ -158,7 +158,7 @@ function main() {
   
   function initOrthoRender() {
     ctx.bindFramebuffer( null );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,

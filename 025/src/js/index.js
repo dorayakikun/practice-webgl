@@ -35,7 +35,6 @@ function main() {
     
     ctx.toggleDepthFunc( true );
     ctx.depthFunc();
-    
     ctx.toggleBlend( false );
     
     // render the texture ( off screen )
@@ -43,17 +42,25 @@ function main() {
     ctx.bindTexture( canvasTexture, 1 );
     setupVbos( lightProgram, board );
     initRender();
-    setupUniforms( lightProgram, true );
+    setupUniforms( lightProgram, true, [ 0, 0, 0, 0 ] );
     ctx.drawElements( ctx.gl.TRIANGLES, board.index.length );
 
     // render the outline ( off screen )
     var sphere = createSphere( 64, 64, 0.1, [ 0, 1, 0, 1 ] );
     setupVbos( lightProgram, sphere );
-    setupUniforms( lightProgram, false );
+    setupUniforms( lightProgram, false, [ 0, 0, 0, 1 ] );
     ctx.drawElements( ctx.gl.TRIANGLES, sphere.index.length );
 
     // render the object ( canvas )
+    ctx.bindFramebuffer( null );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.viewport({
+      x:      0,
+      y:      0,
+      width:  canvas.width,
+      height: canvas.height});
     ctx.bindTexture( frameBufferAttr.texture, 0 );
+    setupUniforms( lightProgram, false, [ 0, 1, 0, 1 ] );
     ctx.drawElements( ctx.gl.TRIANGLES, sphere.index.length );
     
     // disable the depthFunc
@@ -64,7 +71,6 @@ function main() {
     ctx.setBlending( Context.AdditiveBlending );
     
     // render the effect ( canvas )    
-    initOrthoRender();
     var program = ctx.createProgram( [ 'vs', 'fs' ] );
     ctx.useProgram( program );
     setupOrthoVbos( program, board );
@@ -95,7 +101,7 @@ function main() {
       height: bufferSize});
   }
 
-  function setupUniforms( lightProgram, isTexture ) {
+  function setupUniforms( lightProgram, isTexture, ambient ) {
     var vMatrix  = createVMatrix();
     var pMatrix  = createPMatrix();
     var vpMatrix = createVpMatrix( vMatrix, pMatrix );
@@ -111,7 +117,8 @@ function main() {
         { name: 'invMatrix',      type: 'matrix4fv', value: invMatrix },
         { name: 'light',          type: '3fv',       value: light },
         { name: 'texture',        type: '1i',        value: 1 },
-        { name: 'isTexture',      type: '1i',        value: isTexture }
+        { name: 'isTexture',      type: '1i',        value: isTexture },
+        { name: 'ambient',        type: '4fv',       value: ambient }
       ]);
   }
 
@@ -165,16 +172,6 @@ function main() {
     var invMatrix = mat4.identity( mat4.create() );
     mat4.invert( invMatrix, mMatrix );
     return invMatrix;
-  }
-
-  function initOrthoRender() {
-    ctx.bindFramebuffer( null );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
-    ctx.viewport({
-      x:      0,
-      y:      0,
-      width:  canvas.width,
-      height: canvas.height});
   }
 
   function setupOrthoVbos( program, board ) {

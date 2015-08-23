@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8">
-    <title>taiyaki sample</title>
+    <title>god ray sample</title>
   </head>
   <body>
     <canvas id="canvas" width="512" height="512"></canvas>
@@ -43,7 +43,7 @@
         
         p -= mouse;
         
-        for ( float f = 0.0; f <= count; f++ ){
+        for ( float f = 0.0; f <= count; f++ ) {
           float g = ( f + r ) * weight;
           vec2  q = vTextureCoord - p * g * strength * weight;
           
@@ -61,6 +61,7 @@
       uniform mat4 mvpMatrix;
       uniform mat4 invMatrix;
       uniform vec3 light;
+      uniform vec4 ambient;
       uniform bool isTexture;
       
       varying vec4 vColor;
@@ -73,7 +74,7 @@
           vec3  invLight = normalize( invMatrix * vec4( light, 1.0 ) ).xyz;
           float diff     = clamp( dot( invLight, normal ), 0.1, 1.0 );
           
-          vColor = vec4( color.rgb * diff, 1.0 );
+          vColor = vec4( color.rgb * diff, 1.0 ) * ambient;
         }
         vTextureCoord = textureCoord;
         gl_Position   = mvpMatrix * vec4( position, 1.0 );

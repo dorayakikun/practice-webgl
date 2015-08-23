@@ -16,6 +16,7 @@ function main() {
   var frameBufferAttr = ctx.createFrameBuffer( bufferSize, bufferSize );
 
   var qt = quat.identity( quat.create() );
+  document.addEventListener( 'mousemove', calculateQuat );
 
   render();
 
@@ -23,7 +24,7 @@ function main() {
     var lightProgram = ctx.createProgram( [ 'light_vs', 'light_fs' ] );
     ctx.useProgram( lightProgram );
 
-    var sphere = createSphere( 64, 64, 0.3, [ 0, 1, 0, 1 ] );
+    var sphere = createSphere( 64, 64, 0.1, [ 0, 1, 0, 1 ] );
 
     setupVbos( lightProgram, sphere );
     initRender();
@@ -31,7 +32,6 @@ function main() {
     ctx.drawElements( ctx.gl.TRIANGLES, sphere.index.length );
 
     ctx.bindTexture( frameBufferAttr.texture, 0 );
-
     initOrthoRender();
     var program = ctx.createProgram( [ 'vs', 'fs' ] );
     ctx.useProgram( program );
@@ -55,7 +55,7 @@ function main() {
 
   function initRender() {
     ctx.bindFramebuffer( frameBufferAttr.value );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,
@@ -135,7 +135,7 @@ function main() {
 
   function initOrthoRender() {
     ctx.bindFramebuffer( null );
-    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 } );
+    ctx.clear( { r: 0.3, g: 0.3, b: 0.3, a: 1 }, 1 );
     ctx.viewport({
       x:      0,
       y:      0,
