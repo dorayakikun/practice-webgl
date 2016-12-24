@@ -68,6 +68,7 @@ function main() {
     var pMatrix  = createPMatrix();
     var vpMatrix = createVpMatrix( vMatrix, pMatrix );
     var mMatrix  = mat4.identity( mat4.create() );
+    mat4.translate( mMatrix, mMatrix, [ 0.3, 0, 0 ] );
 
     var mvpMatrix = createMvpMatrix( mMatrix, vpMatrix );
     var invMatrix = createInvMatrix( mMatrix );
