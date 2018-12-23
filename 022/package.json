@@ -11,12 +11,12 @@
   "author": "dorayaki-kun",
   "license": "MIT",
   "devDependencies": {
-    "browser-sync": "^2.8.2",
-    "browserify": "^11.0.1"
+    "browser-sync": "2.26.3",
+    "browserify": "16.2.3"
   },
   "dependencies": {
     "gl-matrix-mat4": "^2.2.1-npm",
     "gl-matrix-quat": "^2.2.1-npm",
-    "taiyaki": "0.1.7"
+    "taiyaki": "0.6.1"
   }
 }
