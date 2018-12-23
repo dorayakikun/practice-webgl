@@ -1,0 +1,16 @@
+{
+  "groups": {
+    "default": {
+      "packages": [
+        "019/package.json",
+        "020/package.json",
+        "021/package.json",
+        "022/package.json",
+        "023/package.json",
+        "024/package.json",
+        "025/package.json",
+        "026/package.json"
+      ]
+    }
+  }
+}
